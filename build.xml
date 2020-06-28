@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="recommend-monitor" default="clean-init" basedir=".">
+	<!-- 配置引用属性 -->
+	<property name="src.dir" value="src" />
+	<property name="config.dir" value="config" />
+	<property name="build.dir" value="target" />
+	<property name="lib.dir" value="lib" />
+	<property name="name" value="recommend-monitor" />
+
+	<path id="master-classpath">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<!--默认运行jar目标，但是jar目标依赖compile目标，compile目标依赖clean目标，因此运行顺序是clean，compile .jar-->
+	<target name="clean">
+		<!--执行删除动作，删除路径在dir中定义， ${basedir}属性值在project节点中定义了-->
+		<delete dir="${build.dir}" />
+	</target>
+
+	<target name="compile" depends="clean">
+		<copy todir="${build.dir}/classes">
+			<!-- 将项目中除会编译生成class文件的java文件之外其他类型的文件拷贝到对应的目录下，指定文件名后缀 -->
+			<fileset dir="${src.dir}/main/resources">
+				<include name="*.properties" />
+			</fileset>
+		</copy>
+
+		<mkdir dir="${build.dir}/classes" />
+		<!--mkdir，创建目录，运行该任务前必须先运行clean目标-->
+		<!--运行javac，执行编译，编译的路径是srcdir，编译完成后输出目录是destdir-->
+		<javac fork="yes" target="1.7" srcdir="src" debug="true" destdir="${build.dir}/classes" encoding="UTF-8">
+			<classpath refid="master-classpath" />
+		</javac>
+
+	</target>
+
+	<target name="jar" depends="compile">
+		<tstamp>
+			<format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss" />
+		</tstamp>
+
+		<pathconvert property="quote.classpath" pathsep=" ">
+			<mapper>
+				<chainedmapper>
+					<!-- jar包文件只留文件名，去掉目录信息 -->
+					<flattenmapper />
+					<globmapper from="*" to="lib/*" />
+				</chainedmapper>
+			</mapper>
+			<path refid="master-classpath" />
+		</pathconvert>
+
+		<!-- 生成清单文件 -->
+		<manifest file="${build.dir}/classes/MANIFEST.MF">
+			<attribute name="Built-By" value="" />
+			<attribute name="Built-Date" value="${TODAY}" />
+			<attribute name="Main-Class" value="com.icloud.sync.DataSync" />
+			<attribute name="Class-Path" value="${quote.classpath}" />
+		</manifest>
+
+		<jar destfile="${build.dir}/openid-outbatch-1.0.jar"
+			basedir="${build.dir}/classes" 
+			includes="**/*.class **/*.properties" 
+			manifest="${build.dir}/classes/MANIFEST.MF">
+		</jar>
+	</target >
+
+	<!-- 清理，删除临时目录 -->
+	<target name="clean-init" depends="jar" description="清理，删除临时目录">
+		<delete dir="${build.dir}/classes" />
+		<echo level="info">清理完毕</echo>
+	</target>
+</project>
